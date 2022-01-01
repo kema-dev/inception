@@ -1,0 +1,10 @@
+[server]
+[mysqld]
+[galera]
+port = 3306
+bind-address=0.0.0.0
+[embedded]
+[mariadb]
+general_log
+general_log_file=mariadb.log
+[mariadb-10.5]

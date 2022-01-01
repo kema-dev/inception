@@ -1,0 +1,83 @@
+version: "3"
+
+services:
+  wordpress:
+    depends_on:
+      - mariadb
+    build:
+      context: ./wordpress
+    networks:
+      - default
+    image: wordpress
+    container_name: "inception_wordpress"
+    environment:
+      - WP_URL=https://${DOMAIN_NAME}
+      - WP_DATABASE=${WP_DATABASE}
+      - WP_TITLE=${WP_TITLE}
+      - WP_ADMIN_USER=${WP_ADMIN_USER}
+      - WP_ADMIN_PWD=${WP_ADMIN_PWD}
+      - WP_ADMIN_EMAIL=${WP_ADMIN_EMAIL}
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_PORT=${MARIADB_PORT}
+      - PHP_FPM_PORT=${PHP_FPM_PORT}
+    volumes:
+      - wordpress-volume:/var/www/wordpress
+    restart: unless-stopped
+
+  mariadb:
+    build:
+      context: ./mariadb
+    networks:
+      - default
+    container_name: "inception_mariadb"
+    image: mariadb
+    environment:
+      - MARIADB_USER=${MARIADB_USER}
+      - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+      - MARIADB_DATABASE=${MARIADB_DATABASE}
+      - MARIADB_PORT=${MARIADB_PORT}
+    volumes:
+      - mariadb-volume:/var/lib/mysql
+    restart: unless-stopped 
+
+  nginx:
+    build:
+      context: ./nginx
+    networks:
+      - default
+    container_name: "inception_nginx"
+    image: nginx
+    ports:
+      - "443:443"
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME}
+      - CERTS_DIR=${CERTS_DIR}
+      - TLS_VERSION=${TLS_VERSION}
+      - PHP_FPM_HOST=${PHP_FPM_HOST}
+      - PHP_FPM_PORT=${PHP_FPM_PORT}
+      - VIRTUAL_PORT=443
+      - VIRTUAL_HOST=${DOMAIN_NAME}
+    volumes:
+      - wordpress-volume:/var/www/wordpress
+    restart: unless-stopped 
+
+networks:
+  default:
+    external:
+      name: inception_network
+
+volumes:
+  mariadb-volume:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${MARIADB_HOST_VOLUME_PATH}
+      o: bind
+  wordpress-volume:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${WP_HOST_VOLUME_PATH}
+      o: bind
